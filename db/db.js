@@ -24,3 +24,6 @@ const poolPromise = new sql.ConnectionPool(config)
         console.error('Error al conectar a la base de datos:', err);
         process.exit(1);
     });
+
+
+export { poolPromise, sql }

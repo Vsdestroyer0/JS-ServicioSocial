@@ -11,7 +11,7 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
-const server = 3005
+const server = 1433
 
 app.listen(server, () => {
     console.log(`Servidor escuchando en http://localhost:${server}`);
