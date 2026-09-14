@@ -1,32 +1,37 @@
-import { poolPromise } from "../db/db.js";
+import { poolPromise, sql } from "../db/db.js";
 
 const registrar = async (req, res) =>{
     const { usuario, password, correo, telefono, id_rol } = req.body;
 
-    if(!usuario || !password || !correo || telefono){
+    if(!usuario || !password || !correo || !telefono){
         return res.status(400).json({ message: "Datos faltantes"})
     }
     try{
         const pool = await poolPromise;
         const rolAsignado = id_rol || 2
 
-        const datosEntrada = pool.request()
+        await pool.request()
             .input('usuarioInput', sql.VarChar, usuario)
             .input('passwordInput', sql.VarChar, password)
             .input('correoInput', sql.VarChar, correo)
             .input('telefonoInput', sql.VarChar, telefono)
             .input('idRolInput', sql.TinyInt, rolAsignado)
-            .query(`INSERT INTO tbl_usuario
-                (usuario, password, cooreo, telefono, id_rol)
+            .query(`INSERT INTO tbl_usuarios
+                (usuario, password, correo, telefono, id_rol)
                 VALUES (@usuarioInput, @passwordInput, @correoInput, 
-                telefonoInput, @idRolInput)`);
-  
-    } catch{
+                @telefonoInput, @idRolInput)`);
 
+            
+        return res.status(201).json({ message: "Has creado tu perfil correctamente"})
+    } catch(e){
+        if(e.number === 2627 || e.number === 2601){
+            return res.status(400).json({ message: "Correo ya registrado"})
+        }
+
+        return res.status(500).json({ message: "Error en el servidor" })
     }
 }
 
-// Login
 const login = async (req, res) => {
     const { correo, password } = req.body;
 
@@ -38,7 +43,7 @@ const login = async (req, res) => {
         const pool = await poolPromise;
         const resultado = await pool.request()
             .input('correoInput', sql.VarChar, correo)
-            .request('select * from usuarios where correo = @correoInput')
+            .query('select * from tbl_usuarios where correo = @correoInput')
 
         if(resultado.recordset.length === 0 || resultado.recordset[0].password !== password){
         return res.status(401).json({ message: "Correo o contraseña incorrectos" });
@@ -46,7 +51,7 @@ const login = async (req, res) => {
         
         const usuario = resultado.recordset[0];
 
-        res.cookie('auth', usuario.id, { 
+        res.cookie('auth', usuario.correo, { 
             httpOnly: true, 
             secure: false, 
             maxAge: 3600000 
@@ -55,7 +60,8 @@ const login = async (req, res) => {
         res.json({ 
             message: "Inicio de sesión exitoso", 
             usuario: { 
-                id: usuario.id, 
+                user:   usuario.usuario,
+                id_rol: usuario.id_rol, 
                 correo: usuario.correo } });
 
         } 
@@ -77,11 +83,11 @@ const getUser = async (req, res) => {
         const resultado = await pool.request()
         .query("SELECT id, nombre, correo FROM Usuarios");
 
-        const usuario = resultado.recordset();
+        const usuario = resultado.recordset[0];
         res.json ({ usuario });
     } catch {
         return res.status(500).json({ message: "Error interno del servidor" });
     }
 }
 
-export { login, getUser }
+export { login, getUser, registrar }

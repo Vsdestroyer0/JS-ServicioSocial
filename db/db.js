@@ -3,8 +3,9 @@ import sql from "mssql";
 const config = {
     user: 'sa',          
     password: 'Prueba123*',    
-    server: 'localhost',         
-    database: 'mi_base_datos',
+    server: '172.21.190.58',
+    port:1433,         
+    database: 'servicio_social',
     options: {
         encrypt: true, 
         trustServerCertificate: true 
