@@ -60,9 +60,10 @@ const login = async (req, res) => {
         res.json({ 
             message: "Inicio de sesión exitoso", 
             usuario: { 
-                user:   usuario.usuario,
+                usuario:   usuario.usuario,
                 id_rol: usuario.id_rol, 
-                correo: usuario.correo } });
+                correo: usuario.correo
+            } });
 
         } 
     catch (error) {
@@ -72,22 +73,36 @@ const login = async (req, res) => {
 }
 
 const getUser = async (req, res) => {
-    const userId = req.cookies.auth;
+    const token = req.cookies.auth;
 
-    if(!userId){
+    if(!token){
         return res.status(401).json({ message: "No autenticado"});
     }
 
     try{
         const pool = await poolPromise;
         const resultado = await pool.request()
-        .query("SELECT id, nombre, correo FROM Usuarios");
+        .input('correoInput', sql.VarChar, token)
+        .query(
+            `SELECT usuario, correo, telefono, id_rol 
+            FROM tbl_usuarios
+            WHERE correo = @correoInput `);
 
+        if(resultado.recordset.length === 0){
+            return res.status(404).json({ message: "Usuario no encontrado"})
+        }
+        
         const usuario = resultado.recordset[0];
         res.json ({ usuario });
-    } catch {
+    } catch(e) {
+        console.log(e)
         return res.status(500).json({ message: "Error interno del servidor" });
     }
 }
 
-export { login, getUser, registrar }
+const logout = async(req, res) => {
+    res.clearCookie('auth')
+    res.json({ message: "Sesion cerrada" })
+}
+
+export { login, getUser, registrar, logout }
