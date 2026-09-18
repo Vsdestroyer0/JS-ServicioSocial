@@ -1,4 +1,4 @@
-import { poolPromise, sql } from "../db/db";
+import { poolPromise, sql } from "../db/db.js";
 
 const reqRol = (...rolesPermitidos) => { 
     return async (req, res, next) => {
